@@ -178,7 +178,7 @@ build_binary() {
             # Linux builds use Docker for consistent environment with all dependencies
             info "Using Docker build via build.sh for consistent environment"
             
-            local build_script="$REPO_ROOT/build.sh"
+            local build_script="$REPO_ROOT/scripts/build.sh"
             if [[ ! -f "$build_script" ]]; then
                 error "Build script not found: $build_script"
             fi

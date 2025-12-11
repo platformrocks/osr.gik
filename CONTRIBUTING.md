@@ -60,14 +60,14 @@ cargo test
 
 ```bash
 # Linux/Mac
-./build.sh dev      # Start development shell
-./build.sh test     # Run all tests
-./build.sh fmt      # Format code
-./build.sh clippy   # Lint code
+./scripts/build.sh dev      # Start development shell
+./scripts/build.sh test     # Run all tests
+./scripts/build.sh fmt      # Format code
+./scripts/build.sh clippy   # Lint code
 
 # Windows (PowerShell)
-.\build.ps1 dev
-.\build.ps1 test
+.\scripts\build.ps1 dev
+.\scripts\build.ps1 test
 ```
 
 ### Model Setup

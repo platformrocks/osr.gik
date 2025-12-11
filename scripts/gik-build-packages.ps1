@@ -202,7 +202,7 @@ function Build-Binary {
     
     # Use build.ps1 which handles Docker-based builds with all dependencies
     # This ensures protobuf, cmake, and other system dependencies are available
-    $buildScript = Join-Path $RepoRoot "build.ps1"
+    $buildScript = Join-Path $RepoRoot "scripts\build.ps1"
     
     if (-not (Test-Path $buildScript)) {
         Write-ErrorAndExit "Build script not found: $buildScript"
@@ -210,15 +210,15 @@ function Build-Binary {
     
     # Call build.ps1 to create the binary using Docker
     # Must be called from repo root for relative paths to work
-    Write-Info "Running: .\build.ps1 release-windows from $RepoRoot"
+    Write-Info "Running: .\scripts\build.ps1 release-windows from $RepoRoot"
     
     $currentDir = Get-Location
     Set-Location $RepoRoot
     try {
-        & .\build.ps1 release-windows | Out-Host
+        & .\scripts\build.ps1 release-windows | Out-Host
         
         if ($LASTEXITCODE -ne 0) {
-            Write-ErrorAndExit "Docker build failed. Ensure Docker is running and build.ps1 is accessible."
+            Write-ErrorAndExit "Docker build failed. Ensure Docker is running and scripts\build.ps1 is accessible."
         }
     }
     finally {
@@ -522,12 +522,12 @@ Verify with: docker ps
     Write-Success "Docker is installed and running"
     
     # Check if build.ps1 exists
-    $buildScript = Join-Path $RepoRoot "build.ps1"
+    $buildScript = Join-Path $RepoRoot "scripts\build.ps1"
     if (-not (Test-Path $buildScript)) {
         Write-ErrorAndExit "Build script not found: $buildScript"
     }
     
-    Write-Success "Build script found: build.ps1"
+    Write-Success "Build script found: scripts\build.ps1"
 }
 
 # =============================================================================

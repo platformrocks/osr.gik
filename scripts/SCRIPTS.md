@@ -20,12 +20,12 @@ GIK has complex native dependencies that are difficult to setup manually:
 ### Build Script Hierarchy
 
 ```
-build.ps1 / build.sh          ← Core build scripts (use Docker)
+scripts/build.ps1 / scripts/build.sh          ← Core build scripts (use Docker)
     ↓ used by
 scripts/gik-build-packages.ps1 / .sh  ← Packaging scripts (orchestrate + bundle)
 ```
 
-**Never call `cargo build` directly** - always use `build.ps1` or `build.sh`.
+**Never call `cargo build` directly** - always use `scripts/build.ps1` or `scripts/build.sh`.
 
 ---
 
@@ -37,8 +37,8 @@ GIK provides packaging and installation scripts:
 
 | Script | Platform | Output | Build Method |
 |--------|----------|--------|--------------|
-| `scripts/gik-build-packages.sh` | Linux, macOS | `.tar.gz` | Via `build.sh` (Docker) |
-| `scripts/gik-build-packages.ps1` | Windows | `.zip` | Via `build.ps1` (Docker) |
+| `scripts/gik-build-packages.sh` | Linux, macOS | `.tar.gz` | Via `scripts/build.sh` (Docker) |
+| `scripts/gik-build-packages.ps1` | Windows | `.zip` | Via `scripts/build.ps1` (Docker) |
 
 Both scripts produce self-contained artifacts with:
 - GIK binary (`bin/gik` or `bin/gik.exe`)
@@ -488,7 +488,7 @@ protoc failed: google/protobuf/empty.proto: File not found.
 
 **Solution**: 
 
-The packaging scripts have been updated to **always use Docker via `build.ps1`/`build.sh`**.
+The packaging scripts have been updated to **always use Docker via `scripts/build.ps1`/`scripts/build.sh`**.
 
 If you modified the scripts to use direct `cargo build`, revert those changes:
 
@@ -500,7 +500,7 @@ If you modified the scripts to use direct `cargo build`, revert those changes:
 ./scripts/gik-build-packages.sh
 ```
 
-These scripts internally call `build.ps1`/`build.sh` which handle all Docker orchestration.
+These scripts internally call `scripts/build.ps1`/`scripts/build.sh` which handle all Docker orchestration.
 
 **Manual Build Alternative**:
 
@@ -508,10 +508,10 @@ If you need to build manually:
 
 ```powershell
 # Windows
-.\build.ps1 release-windows    # Creates target/gik.exe
+.\scripts\build.ps1 release-windows    # Creates target/gik.exe
 
 # Linux
-./build.sh release             # Creates target/gik
+./scripts/build.sh release             # Creates target/gik
 ```
 
 ### Models Not Found

@@ -42,40 +42,40 @@ The GIK build system uses Docker to:
 
 ```powershell
 # Build and install to ~/.cargo/bin
-.\build.ps1 install
+.\scripts\build.ps1 install
 
 # Verify installation
 gik --version
 
 # Build Linux binary (for containers/servers)
-.\build.ps1 release
+.\scripts\build.ps1 release
 
 # Start development shell
-.\build.ps1 dev
+.\scripts\build.ps1 dev
 ```
 
 ### Linux/Mac (Bash)
 
 ```bash
 # Make script executable
-chmod +x build.sh
+chmod +x scripts/build.sh
 
 # Build and install to ~/.cargo/bin
-./build.sh install
+./scripts/build.sh install
 
 # Verify installation
 gik --version
 
 # Build Linux binary
-./build.sh release
+./scripts/build.sh release
 
 # Start development shell
-./build.sh dev
+./scripts/build.sh dev
 ```
 
 ## Build Commands
 
-Both `build.ps1` (PowerShell) and `build.sh` (Bash) support identical commands:
+Both `scripts/build.ps1` (PowerShell) and `scripts/build.sh` (Bash) support identical commands:
 
 ### Production Builds
 
@@ -115,13 +115,13 @@ Both `build.ps1` (PowerShell) and `build.sh` (Bash) support identical commands:
 
 ```powershell
 # Fresh build without cache
-.\build.ps1 release -NoBuildCache
+.\scripts\build.ps1 release -NoBuildCache
 
 # CUDA build for RTX 40xx (Ada Lovelace)
-.\build.ps1 release-cuda -CudaArch 89
+.\scripts\build.ps1 release-cuda -CudaArch 89
 
 # Run unit tests only (faster CI)
-.\build.ps1 test-unit
+.\scripts\build.ps1 test-unit
 ```
 
 ## Dockerfiles
@@ -281,7 +281,7 @@ sudo apt install protobuf-compiler
 brew install protobuf
 
 # Windows (use Docker instead)
-.\build.ps1 release-windows
+.\scripts\build.ps1 release-windows
 ```
 
 ### Windows Binary Won't Run
@@ -295,7 +295,7 @@ The specified executable is not a valid application
 **Solution**: Use `release-windows` to build Windows binary:
 
 ```powershell
-.\build.ps1 release-windows
+.\scripts\build.ps1 release-windows
 # Creates target/gik.exe
 ```
 
@@ -308,7 +308,7 @@ nvcc not found / CUDA_HOME not set
 **Solution**: Use the CUDA Dockerfile, not local build:
 
 ```bash
-./build.sh release-cuda
+./scripts/build.sh release-cuda
 ```
 
 ### Slow Rebuilds
@@ -329,7 +329,7 @@ no space left on device
 **Solution**: Clean Docker artifacts:
 
 ```powershell
-.\build.ps1 clean
+.\scripts\build.ps1 clean
 docker system prune -a
 ```
 
@@ -363,7 +363,7 @@ docker rm "${container_id}"
 
 ```bash
 # Build CUDA image
-./build.sh release-cuda
+./scripts/build.sh release-cuda
 
 # Run with GPU access
 docker run --gpus all \
@@ -383,9 +383,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Linux binary
-        run: ./build.sh release
+        run: ./scripts/build.sh release
       - name: Build Windows binary
-        run: ./build.sh release-windows
+        run: ./scripts/build.sh release-windows
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

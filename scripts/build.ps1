@@ -79,6 +79,15 @@ param(
 )
 
 # =============================================================================
+# PATH DETECTION
+# =============================================================================
+
+# Determine repo root (script is now in scripts/ subdirectory)
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = Split-Path -Parent $ScriptDir
+Set-Location $RepoRoot
+
+# =============================================================================
 # CONFIGURATION
 # =============================================================================
 

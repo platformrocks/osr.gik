@@ -132,16 +132,16 @@ Use `build.ps1` (Windows) or `build.sh` (Linux/Mac):
 
 ```powershell
 # Windows (PowerShell)
-.\build.ps1 install                    # Build + install gik.exe
-.\build.ps1 release-cuda 89            # RTX 40xx CUDA build
-.\build.ps1 test-unit                  # Fast unit tests
+.\scripts\build.ps1 install                    # Build + install gik.exe
+.\scripts\build.ps1 release-cuda 89            # RTX 40xx CUDA build
+.\scripts\build.ps1 test-unit                  # Fast unit tests
 ```
 
 ```bash
 # Linux/Mac (Bash)
-./build.sh install                     # Build + install gik
-./build.sh release-cuda 89             # RTX 40xx CUDA build
-./build.sh test                        # All tests
+./scripts/build.sh install                     # Build + install gik
+./scripts/build.sh release-cuda 89             # RTX 40xx CUDA build
+./scripts/build.sh test                        # All tests
 ```
 
 ---
@@ -331,5 +331,5 @@ cargo fmt && cargo clippy -p gik-core -p gik-cli -- -D warnings
 | KG module | `gik-core/src/kg/` |
 | CLI UI helpers | `gik-cli/src/ui/` |
 | Integration tests | `gik-cli/tests/` |
-| Build scripts | `build.ps1`, `build.sh` |
+| Build scripts | `scripts/build.ps1`, `scripts/build.sh` |
 | Docker docs | `README-DOCKER.md` |
