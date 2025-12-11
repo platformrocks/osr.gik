@@ -22,6 +22,8 @@ GIK provides:
 - **GPU Acceleration**: Metal (macOS) and CUDA (NVIDIA) support
 - **Local-First**: All operations work fully offline, no LLM calls
 
+![GIK Terminal Demo](site/gik-terminal-demo.gif)
+
 ---
 
 ## Quick Install
