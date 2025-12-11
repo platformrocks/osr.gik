@@ -1,0 +1,46 @@
+# Cargo configuration for faster builds
+# See: https://doc.rust-lang.org/cargo/reference/config.html
+
+[build]
+# Use all available CPU cores for parallel compilation
+# Adjust based on your machine (M1/M2 typically have 8 cores)
+jobs = 8
+
+[target.aarch64-apple-darwin]
+# Use system linker with optimizations for macOS ARM64
+rustflags = [
+    # Enable frame pointers for better profiling
+    "-C", "force-frame-pointers=yes",
+]
+
+[net]
+# Parallel git fetches for faster dependency downloads
+git-fetch-with-cli = true
+
+[registries.crates-io]
+protocol = "sparse"
+
+# ============================================================================
+# sccache configuration (optional but highly recommended)
+# ============================================================================
+# To install: cargo install sccache
+# Then uncomment the line below:
+# 
+# [build]
+# rustc-wrapper = "sccache"
+#
+# After installing, run: sccache --start-server
+# Check stats with: sccache --show-stats
+
+[alias]
+# Quick development aliases
+c = "check"
+ck = "check --all-targets"
+t = "test --lib"
+ta = "test --all-targets"
+b = "build"
+br = "build --release"
+# Clippy with all warnings
+cl = "clippy --all-targets --all-features -- -D warnings"
+# Format check
+fc = "fmt --check"

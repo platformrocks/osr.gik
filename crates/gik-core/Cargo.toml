@@ -1,0 +1,53 @@
+[package]
+name = "gik-core"
+description = "Guided Indexing Kernel – core engine library"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "gik_core"
+path = "src/lib.rs"
+
+[dependencies]
+# Core engine dependencies
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+tracing.workspace = true
+dirs = "6"
+serde_yaml = "0.9"
+toml = "0.9"
+ignore = "0.4"
+
+# Infrastructure layer (Phase 4 migration)
+# All vector index and KG storage is now via gik-db
+gik-db = { path = "../gik-db" }     # Storage: vector index, KG store
+gik-model = { path = "../gik-model" } # ML inference: embeddings, reranking
+
+# KG extraction (regex for import parsing)
+regex = "1"
+
+# BM25 Sparse Retrieval (Hybrid Search)
+rust-stemmers = "1.2"
+unicode-segmentation = "1.11"
+bincode = "2"
+
+# Parallelism (Phase 8.1)
+rayon = "1.10"
+
+# Utility functions (URL fetching, etc.)
+gik-utils = { path = "../gik-utils" }
+
+[features]
+default = []
+metal = ["gik-model/metal"]
+cuda = ["gik-model/cuda"]
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,36 @@
+name: Build macOS x86_64
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-macos-intel:
+    runs-on: macos-15-intel  # Intel runner (replaces deprecated macos-13)
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+      
+      - name: Build package
+        run: TARGET=macos-x86_64 bash scripts/gik-build-packages.sh
+        
+      - name: Calculate SHA256
+        run: shasum -a 256 dist/gik-macos-x86_64.tar.gz
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gik-macos-x86_64
+          path: dist/gik-macos-x86_64.tar.gz
+          
+      - name: Upload to release (if tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/gik-macos-x86_64.tar.gz

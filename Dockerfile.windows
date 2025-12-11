@@ -1,0 +1,81 @@
+# =============================================================================
+# GIK CLI - Windows Cross-Compilation Build (x86_64-pc-windows-gnu)
+# =============================================================================
+#
+# This Dockerfile cross-compiles the GIK CLI for Windows from a Linux host.
+# Uses MinGW-w64 toolchain for Windows target.
+#
+# USAGE:
+#   docker build -t gik-cli-windows:latest -f Dockerfile.windows .
+#
+# EXTRACTION:
+#   container_id=$(docker create gik-cli-windows:latest)
+#   docker cp "${container_id}:/build/target/x86_64-pc-windows-gnu/release/gik.exe" ./target/gik.exe
+#   docker rm "${container_id}"
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Base - Rust + MinGW cross-compilation toolchain
+# -----------------------------------------------------------------------------
+FROM rust:slim-bookworm AS base
+
+# Cross-compilation environment for Windows
+ENV CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc \
+    CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc \
+    CXX_x86_64_pc_windows_gnu=x86_64-w64-mingw32-g++ \
+    AR_x86_64_pc_windows_gnu=x86_64-w64-mingw32-ar \
+    # Build optimization
+    CARGO_INCREMENTAL=1 \
+    CARGO_NET_GIT_FETCH_WITH_CLI=true \
+    CARGO_TERM_COLOR=always
+
+# Install build dependencies for cross-compilation
+# - build-essential: Base compilation tools
+# - cmake: Required by aws-lc-sys and other crates
+# - protobuf-compiler: Required by lance/arrow
+# - mingw-w64: Windows cross-compilation toolchain
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    protobuf-compiler \
+    libprotobuf-dev \
+    pkg-config \
+    libssl-dev \
+    gcc-mingw-w64-x86-64 \
+    g++-mingw-w64-x86-64 \
+    mingw-w64-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install nightly Rust and add Windows target
+RUN rustup install nightly && rustup default nightly && \
+    rustup target add x86_64-pc-windows-gnu
+
+WORKDIR /build
+
+# -----------------------------------------------------------------------------
+# Stage 2: Build - Compile full source for Windows
+# -----------------------------------------------------------------------------
+FROM base AS builder
+
+# Git hash for version info (passed from build script)
+ARG GIT_HASH=unknown
+ENV GIT_HASH=${GIT_HASH}
+
+# Copy full workspace
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+
+# Build release binary for Windows
+RUN cargo build --release --target x86_64-pc-windows-gnu -p gik-cli
+
+# Verify binary was created
+RUN test -f /build/target/x86_64-pc-windows-gnu/release/gik.exe && \
+    echo "Windows binary size: $(du -h /build/target/x86_64-pc-windows-gnu/release/gik.exe | cut -f1)"
+
+# =============================================================================
+# BUILD METADATA
+# =============================================================================
+LABEL org.opencontainers.image.title="GIK CLI (Windows)" \
+      org.opencontainers.image.description="Guided Indexing Kernel - Windows cross-compiled binary" \
+      org.opencontainers.image.source="https://github.com/platformrocks/osr.gik"

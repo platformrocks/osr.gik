@@ -1,0 +1,43 @@
+#include <windows.h>
+
+#define VER_FILEVERSION             0,1,0,0
+#define VER_FILEVERSION_STR         "0.1.0.0"
+
+#define VER_PRODUCTVERSION          0,1,0,0
+#define VER_PRODUCTVERSION_STR      "0.1.0"
+
+#define VER_COMPANYNAME_STR         "PLATFORM ROCKS LTDA"
+#define VER_FILEDESCRIPTION_STR     "Guided Indexing Kernel - Local-first knowledge engine"
+#define VER_INTERNALNAME_STR        "gik"
+#define VER_LEGALCOPYRIGHT_STR      "Copyright (C) 2025 PLATFORM ROCKS LTDA"
+#define VER_ORIGINALFILENAME_STR    "gik.exe"
+#define VER_PRODUCTNAME_STR         "GIK - Guided Indexing Kernel"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     VER_FILEVERSION
+PRODUCTVERSION  VER_PRODUCTVERSION
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEFLAGS       0x0L
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"  // U.S. English (0x0409), Unicode (0x04b0)
+        BEGIN
+            VALUE "CompanyName",      VER_COMPANYNAME_STR
+            VALUE "FileDescription",  VER_FILEDESCRIPTION_STR
+            VALUE "FileVersion",      VER_FILEVERSION_STR
+            VALUE "InternalName",     VER_INTERNALNAME_STR
+            VALUE "LegalCopyright",   VER_LEGALCOPYRIGHT_STR
+            VALUE "OriginalFilename", VER_ORIGINALFILENAME_STR
+            VALUE "ProductName",      VER_PRODUCTNAME_STR
+            VALUE "ProductVersion",   VER_PRODUCTVERSION_STR
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 0x04b0  // U.S. English, Unicode
+    END
+END

@@ -1,0 +1,125 @@
+$schema: .guided/schema/prompt.schema.json
+apiVersion: ops/v1
+kind: Prompt
+id: gik.osr-raffle.exploratory-cli-plan-and-run
+title: Exploratory GIK CLI testing against osr.raffle using docs/0-PRD.md and docs/4-COMMANDS.md
+persona: ExploratoryTester
+createdBy: guisantos
+category: testing
+workspace: /Users/guilhermesantos/Workspace/osr.raffle
+tags:
+  - gik
+  - exploratory-testing
+  - cli
+  - documentation
+  - osr-raffle
+
+context:
+  - >
+    You are performing an exploratory test cycle of the GIK CLI against the osr.raffle repository
+    to validate that the real behavior of commands matches the expectations defined in GIK
+    docs/0-PRD.md and docs/4-COMMANDS.md.
+  - >
+    Treat docs/0-PRD.md and docs/4-COMMANDS.md from the GIK project as the specification of
+    intended behavior: commands, options, flows, and JSON contracts.
+  - >
+    Your main goal is to derive an expectations matrix from the docs and then exercise the
+    real CLI (with GIK already installed) on the osr.raffle repo, documenting all observations,
+    divergences, bugs, surprises, and confirmed behaviors.
+
+dependencies:
+  - gik.docs-0-prd.review-and-alignment
+  - gik.docs-4-commands.review-and-alignment
+
+output:
+  - file: .guided/testing/gik-osr-raffle.exploratory-plan.md
+    language: markdown
+    rules:
+      - Start with a short scope and assumptions section referencing docs/0-PRD.md and docs/4-COMMANDS.md.
+      - Include a table of all GIK commands to be exercised, with columns: Command, Syntax, Purpose, Key options.
+      - For each command, describe expected behaviors and outputs (human and JSON) based on the docs.
+      - Organize tests into scenarios and flows (init, add+commit, ask, log, status, reindex, release, memory, show).
+      - Mark which scenarios are critical vs optional.
+  - file: .guided/testing/gik-osr-raffle.execution-log.jsonl
+    language: jsonl
+    rules:
+      - One JSON object per test action or observation.
+      - Include fields like: timestamp, scenarioId, commandRun, cwd, expectedOutcome, actualOutcome, notes, severity.
+      - Record both successful and failing or surprising behaviors.
+  - file: .guided/testing/gik-osr-raffle.results-summary.md
+    language: markdown
+    rules:
+      - Summarize the test execution: what was covered, what was partially covered, what was not executed.
+      - Include a section for “Key findings” with bullets for the most important observations.
+      - Include a short per-command summary (init, status, add, commit, log, ask, stats, reindex, release, memory-metrics, prune-memory, show).
+  - file: .guided/testing/gik-osr-raffle.divergences-and-bugs.md
+    language: markdown
+    rules:
+      - Start with an executive summary of divergences between docs and actual behavior.
+      - For each issue, include: ID, command, severity, type (doc-mismatch, bug, usability, success-case), steps, expected vs actual, and notes.
+      - Highlight clear bugs separately from documentation-only mismatches.
+      - Include a section listing “Confirmed matches and successes” to capture where behavior is aligned with the docs.
+
+steps:
+  - id: understand-spec-docs
+    title: Deep understanding of docs/0-PRD.md and docs/4-COMMANDS.md
+    description: Build a solid mental model of GIK behavior before touching the target repo.
+    actions:
+      - Locate and read GIK docs/0-PRD.md in full, capturing the main goals, user journeys and constraints for the CLI.
+      - Locate and read GIK docs/4-COMMANDS.md in full, listing all documented commands, options, examples and described behaviors.
+      - From docs/0-PRD.md, extract the key workflows that matter for CLI usage (init workspace, ingest knowledge, ask questions, maintenance).
+      - From docs/4-COMMANDS.md, build an internal checklist of commands (init, status, bases, add, commit, log, ask, stats, reindex, release, memory-metrics, prune-memory, show) and what each is supposed to do.
+      - Note any assumptions or unclear points in the docs that you want to validate during exploratory testing.
+
+  - id: derive-expectations-and-plan
+    title: Derive expectations matrix and exploratory plan
+    description: Turn the docs into a concrete test plan for GIK CLI behavior.
+    actions:
+      - For each documented command in docs/4-COMMANDS.md, derive:
+        the canonical syntax, required vs optional arguments, key options, and whether it mutates state or is read-only.
+      - For commands that support JSON or structured outputs (status, stats, ask, log, reindex, release, memory-metrics, prune-memory, show),
+        extract the expected JSON shapes and important fields from the docs.
+      - Identify end-to-end flows to test on osr.raffle, such as:
+        “fresh init + add + commit + ask”,
+        “log and status after several commits”,
+        “reindex after model change or as a no-op”,
+        “generate release changelog from commit history”,
+        “memory metrics and pruning if memory is used”.
+      - Prioritize scenarios according to PRD importance: start with flows that matter most to end users and project maintainers.
+      - Write .guided/testing/gik-osr-raffle.exploratory-plan.md capturing the full matrix of commands, behaviors and expected outputs.
+
+  - id: prepare-environment-and-clone
+    title: Prepare local environment and clone osr.raffle
+    description: Ensure the local setup is ready and the target repo is available.
+    actions:
+      - Verify that GIK is already installed and accessible in the environment (for example by checking gik --version),
+        and note the version in your execution log.
+      - Choose /Users/guilhermesantos/Workspace as the base directory for cloning if it exists, or adapt to the local workspace convention.
+      - Clone the repository git@github.com:platformrocks/osr.raffle.git into the chosen workspace.
+      - Confirm that the cloned repo contains a valid project structure where GIK can be initialized and used (for example presence of code, docs or other materials).
+      - Record environment details in the execution log: OS, shell, GIK version, Git version, and repo path.
+
+  - id: initialize-gik-and-baseline
+    title: Initialize GIK in osr.raffle and establish a baseline
+    description: Bring GIK into the osr.raffle workspace and record baseline state.
+    actions:
+      - In the osr.raffle workspace, check whether GIK is already initialized by inspecting .guided/knowledge or running gik status.
+      - If not initialized, run the init flow as described in docs/4-COMMANDS.md and confirm:
+        directory layout, HEAD file, timeline.jsonl contents and staging/stack directories.
+      - If already initialized, capture the existing status as the baseline and note any prior revisions or bases that might affect tests.
+      - For each initialization-related step, log the command, expected behavior from docs and actual observed behavior in the JSONL execution log.
+
+  - id: execute-exploratory-scenarios
+    title: Execute exploratory test scenarios with GIK on osr.raffle
+    description: Systematically exercise GIK CLI commands and flows in the target repo.
+    actions:
+      - Follow the exploratory plan file and execute scenarios in a logical order, starting with basic flows:
+        init (if needed), add, commit, status, stats.
+      - For add and commit scenarios, use realistic targets from osr.raffle (code directories, docs, or other relevant content),
+        and vary options such as bases and different target sets.
+      - Exercise ask scenarios using questions that make sense for osr.raffle:
+        ask about entities, features, architecture, and verify that responses are consistent with the project.
+      - Run log, reindex, release, memory-metrics, prune-memory and show according to your plan,
+        making sure you cover both normal flows and edge cases allowed by the docs.
+      - For each command invocation, record in the execution log:
+        the exact command, context (cwd, branch), expected behavior, actual output

@@ -1,0 +1,98 @@
+[workspace]
+resolver = "2"
+members = ["crates/gik-core", "crates/gik-cli", "crates/gik-db", "crates/gik-model", "crates/gik-utils"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85" 
+license = "MIT"
+repository = "https://github.com/platformrocks/osr.gik"
+authors = ["Gui Santos <guilherme@platform.rocks>"]
+homepage = "https://github.com/platformrocks/osr.gik"
+documentation = "https://docs.rs/gik-core"
+
+[workspace.dependencies]
+# Error handling
+anyhow = "1"
+thiserror = "2"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Time & IDs
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# Logging / tracing
+tracing = "0.1"
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# ML / Embeddings (Candle) - base dependencies without GPU features
+# GPU features are added conditionally in gik-model based on target OS
+candle-core = { version = "0.9", default-features = false }
+candle-nn = { version = "0.9", default-features = false }
+candle-transformers = { version = "0.9", default-features = false }
+# Disable default features to reduce compile time, enable only what's needed
+tokenizers = { version = "0.22", default-features = false, features = ["onig"] }
+safetensors = "0.7"
+
+# Vector Index (LanceDB)
+lancedb = "0.22"
+# Arrow with minimal features - only what we use
+arrow = { version = "56", default-features = false, features = ["ipc"] }
+arrow-array = { version = "56", default-features = false }
+arrow-buffer = { version = "56", default-features = false }
+arrow-schema = { version = "56", default-features = false }
+tokio = { version = "1", features = ["rt-multi-thread"] }
+futures = "0.3"
+
+# Internal crates
+gik-core = { path = "crates/gik-core" }
+gik-db = { path = "crates/gik-db" }
+gik-model = { path = "crates/gik-model" }
+
+[profile.dev]
+opt-level = 0
+debug = 1  # Use line tables only (faster than full debug info)
+incremental = true
+# Split debuginfo to speed up linking on macOS
+split-debuginfo = "unpacked"
+
+[profile.release]
+opt-level = 3
+lto = "thin" 
+codegen-units = 1 
+strip = true 
+panic = "abort"
+
+# Optimize all dependencies even in dev mode (faster runtime, slower first build)
+# This is a tradeoff - dependencies are compiled once with optimization
+[profile.dev.package."*"]
+opt-level = 2
+debug = false  # No debug info for dependencies - faster linking
+
+# Heavy dependencies that benefit from optimization even in dev
+[profile.dev.package.lancedb]
+opt-level = 2
+
+[profile.dev.package.arrow]
+opt-level = 2
+
+[profile.dev.package.datafusion]
+opt-level = 2
+
+[profile.dev.package.candle-core]
+opt-level = 2
+
+[profile.dev.package.candle-nn]
+opt-level = 2
+
+[profile.dev.package.tokenizers]
+opt-level = 2
+
+[profile.bench]
+inherits = "release"

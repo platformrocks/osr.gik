@@ -1,0 +1,25 @@
+[package]
+name = "gik-utils"
+description = "Utility functions for GIK - URL fetching, content extraction, etc."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "gik_utils"
+path = "src/lib.rs"
+
+[dependencies]
+# Core utilities
+thiserror.workspace = true
+
+# HTTP client for URL fetching
+reqwest = { version = "0.12", features = ["blocking"] }
+
+# Headless browser for JavaScript-rendered pages
+headless_chrome = "1.0"
+
+# HTML to Markdown conversion
+htmd = "0.1"

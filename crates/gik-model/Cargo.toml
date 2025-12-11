@@ -1,0 +1,58 @@
+[package]
+name = "gik-model"
+description = "GIK ML inference layer - embeddings and reranking"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "gik_model"
+path = "src/lib.rs"
+
+[features]
+default = ["embedded"]
+
+# Uses Candle + bundled models in the binary
+embedded = [
+    "dep:candle-core",
+    "dep:candle-nn",
+    "dep:candle-transformers",
+    "dep:tokenizers",
+    "dep:safetensors",
+]
+
+# GPU acceleration - Metal for macOS, CUDA for Windows/Linux
+metal = ["candle-core/metal", "candle-nn/metal", "candle-transformers/metal"]
+cuda = ["candle-core/cuda", "candle-nn/cuda", "candle-transformers/cuda"]
+
+# Optional: real Ollama backend
+ollama = ["dep:reqwest"]
+
+[dependencies]
+# Error handling
+thiserror.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Logging
+tracing.workspace = true
+
+# File paths
+dirs = "6"
+
+# Candle ML (feature-gated)
+candle-core = { workspace = true, optional = true }
+candle-nn = { workspace = true, optional = true }
+candle-transformers = { workspace = true, optional = true }
+tokenizers = { workspace = true, optional = true }
+safetensors = { workspace = true, optional = true }
+
+# Ollama HTTP client (feature-gated)
+reqwest = { version = "0.12", features = ["json"], optional = true }
+
+[dev-dependencies]
+tempfile = "3"

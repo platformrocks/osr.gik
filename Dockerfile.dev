@@ -1,0 +1,79 @@
+# =============================================================================
+# GIK CLI - Development Environment
+# =============================================================================
+#
+# This Dockerfile provides a complete development environment for GIK CLI
+# with all necessary tools for building, testing, and debugging.
+#
+# FEATURES:
+# - Full Rust nightly toolchain
+# - rustfmt, clippy, rust-analyzer
+# - All build dependencies pre-installed
+# - Volume mounts for source and cargo cache
+#
+# USAGE:
+#   docker-compose run --rm gik-dev bash       # Interactive shell
+#   docker-compose run --rm gik-dev cargo test # Run tests
+#   docker-compose run --rm gik-dev cargo fmt  # Format code
+#
+# =============================================================================
+
+FROM rust:bookworm
+
+# Development environment configuration
+ENV CARGO_INCREMENTAL=1 \
+    CARGO_TERM_COLOR=always \
+    RUST_BACKTRACE=1 \
+    # Better error messages in development
+    RUST_LIB_BACKTRACE=1 \
+    # Editor integration
+    EDITOR=vim
+
+# Install all development dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Build essentials
+    build-essential \
+    cmake \
+    protobuf-compiler \
+    libprotobuf-dev \
+    pkg-config \
+    libssl-dev \
+    # Development tools
+    git \
+    curl \
+    vim \
+    less \
+    # Debugging tools
+    gdb \
+    strace \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install nightly Rust for edition2024 support
+RUN rustup install nightly && rustup default nightly
+
+# Install Rust development tools
+RUN rustup component add \
+    rustfmt \
+    clippy \
+    rust-analyzer \
+    llvm-tools-preview
+
+# Install cargo tools for development
+RUN cargo install --locked \
+    cargo-watch \
+    cargo-expand \
+    cargo-audit \
+    cargo-outdated \
+    cargo-deny
+
+# Set working directory
+WORKDIR /workspace
+
+# Default command
+CMD ["bash"]
+
+# =============================================================================
+# BUILD METADATA
+# =============================================================================
+LABEL org.opencontainers.image.title="GIK Dev Environment" \
+      org.opencontainers.image.description="Development environment for GIK CLI"

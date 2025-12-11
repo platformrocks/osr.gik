@@ -1,0 +1,228 @@
+# =============================================================================
+# GIK Global Configuration Example
+# =============================================================================
+#
+# This file documents all available user configuration options for GIK.
+# Copy this file to ~/.gik/config.yaml and customize as needed.
+#
+# Configuration is loaded from:
+#   - Global: ~/.gik/config.yaml (applies to all workspaces)
+#   - Project: .guided/knowledge/config.yaml (per-project overrides)
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Device Preference
+# -----------------------------------------------------------------------------
+# Controls which compute device is used for embedding inference.
+#
+# Options:
+#   - auto: (default) Tries GPU (Metal on macOS) first, falls back to CPU
+#   - gpu:  Force GPU acceleration (Metal). Fails if GPU unavailable.
+#   - cpu:  Force CPU-only inference. Useful for debugging or GPU issues.
+device: auto
+
+# =============================================================================
+# EMBEDDINGS CONFIGURATION
+# =============================================================================
+# Simplified embeddings section with default and per-base overrides.
+# This is the recommended way to configure embeddings (replaces legacy profiles).
+
+embeddings:
+  # Default embedding configuration used when no per-base override exists.
+  default:
+    # Provider type for embedding generation.
+    # Options: "candle" (local, default), "ollama" (remote server)
+    provider: candle
+
+    # HuggingFace model ID for the embedding model.
+    # Popular options:
+    #   - sentence-transformers/all-MiniLM-L6-v2 (384 dim, fast, good quality)
+    #   - BAAI/bge-small-en-v1.5 (384 dim, slightly better quality)
+    #   - sentence-transformers/all-mpnet-base-v2 (768 dim, higher quality, slower)
+    modelId: sentence-transformers/all-MiniLM-L6-v2
+
+    # Model architecture (optional, auto-detected from config.json).
+    # Options: "bert", "roberta", "distilbert", "mpnet"
+    # Only set this to override auto-detection for non-standard models.
+    # architecture: bert
+
+    # Local path to model files (optional).
+    # If not set, automatically uses: ~/.gik/models/embeddings/<model_name>
+    # Uncomment and customize only for custom model locations:
+    # localPath: /path/to/custom/models/all-MiniLM-L6-v2
+
+    # Embedding vector dimension (optional, auto-detected from model).
+    # Common values: 384, 512, 768, 1024
+    dimension: 384
+
+    # Maximum tokens the model accepts (optional).
+    # Texts longer than this are truncated.
+    maxTokens: 256
+
+  # Per-base embedding configuration overrides.
+  # Use this to configure different models for different knowledge bases.
+  bases:
+    # Example: Use a code-optimized model for the code base
+    # code:
+    #   provider: candle
+    #   modelId: microsoft/codebert-base
+    #   dimension: 768
+
+    # Example: Use Ollama for docs base (requires running Ollama server)
+    # docs:
+    #   provider: ollama
+    #   modelId: nomic-embed-text
+
+# =============================================================================
+# VECTOR INDEX CONFIGURATION
+# =============================================================================
+# Controls how vector embeddings are stored and searched.
+
+indexes:
+  # Default index configuration.
+  default:
+    # Backend type for vector storage.
+    # Options:
+    #   - simple_file: (default) Simple file-based storage, good for small/medium projects
+    #   - lancedb: LanceDB backend, better for large projects with millions of vectors
+    backend: simple_file
+
+    # Similarity metric for vector search.
+    # Options:
+    #   - cosine: (default) Cosine similarity, normalized vectors
+    #   - dot: Dot product, faster but requires normalized vectors
+    #   - l2: Euclidean distance
+    metric: cosine
+
+  # Per-base index configuration overrides.
+  bases:
+    # Example: Use LanceDB for large code bases
+    # code:
+    #   backend: lancedb
+    #   metric: cosine
+
+# =============================================================================
+# RETRIEVAL CONFIGURATION
+# =============================================================================
+# Controls the retrieval pipeline: how documents are searched and ranked.
+
+retrieval:
+  # ---------------------------------------------------------------------------
+  # Reranker Configuration
+  # ---------------------------------------------------------------------------
+  # Cross-encoder reranker for improved relevance ranking.
+  # Uses a two-stage retrieval: fast embedding search, then reranking top results.
+  reranker:
+    # Whether reranking is enabled.
+    # Disable if you don't have the reranker model or want faster (but less accurate) results.
+    enabled: true
+
+    # HuggingFace model ID for the cross-encoder.
+    # Default is a lightweight but effective model.
+    modelId: cross-encoder/ms-marco-MiniLM-L6-v2
+
+    # Local path to reranker model files (optional).
+    # If not set, automatically uses: ~/.gik/models/rerankers/<model_name>
+    # Uncomment and customize only for custom model locations:
+    # localPath: /path/to/custom/models/ms-marco-MiniLM-L6-v2
+
+    # Number of candidates to pass to the reranker.
+    # Higher values = better recall but slower reranking.
+    # Recommendation: 20-50 for most use cases.
+    topK: 30
+
+    # Default number of final results after reranking.
+    # This is the default maximum chunks returned by `gik ask`.
+    # NOTE: The CLI flag `--top-k` overrides this value, allowing users to
+    # request more or fewer chunks without modifying the config file.
+    # Example: `gik ask "query" --top-k 20` will return up to 20 chunks.
+    finalK: 5
+
+  # ---------------------------------------------------------------------------
+  # Hybrid Search Configuration
+  # ---------------------------------------------------------------------------
+  # Combines dense (semantic) and sparse (BM25 keyword) search for better results.
+  hybrid:
+    # Whether hybrid search is enabled.
+    # When false, only dense embedding search is used.
+    enabled: true
+
+    # RRF k parameter for score fusion.
+    # Higher values reduce the impact of rank differences between dense and sparse.
+    # Formula: RRF(d) = Σ 1/(k + rank)
+    # Typical values: 60 (default), range 20-100
+    rrfK: 60
+
+    # Weight for dense (semantic) retrieval in fusion.
+    # Range: 0.0 to 1.0
+    denseWeight: 0.5
+
+    # Weight for sparse (BM25) retrieval in fusion.
+    # Range: 0.0 to 1.0
+    # Note: denseWeight + sparseWeight should ideally sum to 1.0
+    sparseWeight: 0.5
+
+    # Number of candidates from dense search before fusion.
+    denseTopK: 50
+
+    # Number of candidates from sparse search before fusion.
+    sparseTopK: 50
+
+    # BM25 configuration for sparse search.
+    bm25:
+      # BM25 k1 parameter - term frequency saturation.
+      # Higher values give more weight to term frequency.
+      # Typical values: 1.2-2.0
+      k1: 1.2
+
+      # BM25 b parameter - document length normalization.
+      # 0 = no length normalization, 1 = full normalization.
+      # Typical value: 0.75
+      b: 0.75
+
+      # Whether to apply Porter stemming to tokens.
+      # Helps match word variations (e.g., "running" matches "run").
+      stemming: true
+
+      # Whether to remove stop words during tokenization.
+      # Stop words: "the", "is", "at", "which", etc.
+      removeStopwords: true
+
+      # Minimum token length to include in the index.
+      # Filters out very short tokens (1-2 characters).
+      minTokenLength: 2
+
+# =============================================================================
+# PERFORMANCE CONFIGURATION
+# =============================================================================
+# Controls batching, parallelism, and resource limits for indexing operations.
+
+performance:
+  # Number of texts to embed in a single batch.
+  # Larger batches are more efficient but require more memory.
+  # Recommendations:
+  #   - CPU: 16-32
+  #   - GPU with 8GB+ VRAM: 64-128
+  #   - GPU with 4GB VRAM: 32
+  embeddingBatchSize: 32
+
+  # Maximum file size in bytes.
+  # Files larger than this are skipped during indexing.
+  # Default: 1,000,000 (1 MB)
+  maxFileSizeBytes: 1000000
+
+  # Maximum number of lines per file.
+  # Files with more lines than this are skipped.
+  # Helps avoid processing minified files or large generated files.
+  maxFileLines: 10000
+
+  # Whether to run a warm-up embedding before the main loop.
+  # Pays model initialization cost once upfront for more consistent timings.
+  # Disable if you're doing single-file operations.
+  enableWarmup: true
+
+  # Whether to read and validate files in parallel using rayon.
+  # Significantly speeds up indexing on multi-core systems.
+  # Disable if you encounter file descriptor limits.
+  parallelFileReading: true

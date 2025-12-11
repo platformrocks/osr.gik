@@ -1,0 +1,121 @@
+# =============================================================================
+# GIK CLI - CUDA-enabled Build (Linux x86_64 with GPU support)
+# =============================================================================
+#
+# This Dockerfile builds GIK CLI with CUDA support for GPU-accelerated
+# embeddings and reranking using NVIDIA GPUs.
+#
+# REQUIREMENTS:
+# - NVIDIA Container Toolkit installed on host
+# - NVIDIA GPU with CUDA compute capability 7.0+ (Volta or newer)
+#
+# USAGE:
+#   docker build -t gik-cli-cuda:latest -f Dockerfile.cuda .
+#   docker run --gpus all -v $PWD:/workspace gik-cli-cuda:latest [command]
+#
+# CUDA COMPUTE CAPABILITIES:
+#   - 70: Volta (V100)
+#   - 75: Turing (RTX 20xx, T4)
+#   - 80: Ampere (A100)
+#   - 86: Ampere (RTX 30xx, A10)
+#   - 89: Ada Lovelace (RTX 40xx, L4)
+#   - 90: Hopper (H100)
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Base - CUDA + Rust toolchain
+# -----------------------------------------------------------------------------
+FROM nvidia/cuda:12.4.0-devel-ubuntu22.04 AS base
+
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# CUDA environment configuration
+ENV CUDA_HOME=/usr/local/cuda \
+    CUDA_PATH=/usr/local/cuda \
+    PATH="/usr/local/cuda/bin:${PATH}" \
+    LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" \
+    # CUDA compute capability (default: RTX 30xx/A10)
+    # Override with --build-arg CUDA_COMPUTE_CAP=89 for RTX 40xx
+    CUDA_COMPUTE_CAP=86
+
+# Build configuration
+ENV CARGO_INCREMENTAL=1 \
+    CARGO_NET_GIT_FETCH_WITH_CLI=true \
+    CARGO_TERM_COLOR=always \
+    RUST_BACKTRACE=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    protobuf-compiler \
+    libprotobuf-dev \
+    pkg-config \
+    libssl-dev \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust (nightly for edition2024)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Verify CUDA installation
+RUN nvcc --version
+
+WORKDIR /build
+
+# Allow overriding CUDA compute capability at build time
+ARG CUDA_COMPUTE_CAP=86
+ENV CUDA_COMPUTE_CAP=${CUDA_COMPUTE_CAP}
+
+# -----------------------------------------------------------------------------
+# Stage 2: Build - Compile full source with CUDA
+# -----------------------------------------------------------------------------
+FROM base AS builder
+
+# Git hash for version info (passed from build script)
+ARG GIT_HASH=unknown
+ENV GIT_HASH=${GIT_HASH}
+
+# Copy full workspace
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+
+# Build release binary with CUDA feature
+RUN cargo build --release -p gik-cli --features cuda
+
+# Verify binary was created
+RUN test -f /build/target/release/gik && \
+    echo "CUDA binary size: $(du -h /build/target/release/gik | cut -f1)"
+
+# -----------------------------------------------------------------------------
+# Stage 3: Runtime - CUDA runtime + binary
+# -----------------------------------------------------------------------------
+FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04 AS runtime
+
+# Runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libssl3 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy binary from builder
+COPY --from=builder /build/target/release/gik /usr/local/bin/gik
+
+# Verify binary works (basic check, GPU not required)
+RUN /usr/local/bin/gik --version
+
+# Default working directory for workspace mounting
+WORKDIR /workspace
+
+ENTRYPOINT ["/usr/local/bin/gik"]
+
+# =============================================================================
+# BUILD METADATA
+# =============================================================================
+LABEL org.opencontainers.image.title="GIK CLI (CUDA)" \
+      org.opencontainers.image.description="Guided Indexing Kernel - GPU-accelerated with CUDA" \
+      org.opencontainers.image.source="https://github.com/platformrocks/osr.gik"

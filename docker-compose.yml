@@ -1,0 +1,81 @@
+# =============================================================================
+# GIK CLI - Docker Compose Configuration
+# =============================================================================
+#
+# This file defines services for development and building GIK CLI.
+#
+# SERVICES:
+#   gik-dev    - Development environment with full toolchain
+#   gik-build  - Build-only service for release compilation
+#
+# VOLUMES:
+#   cargo-cache  - Shared cargo registry cache (speeds up builds)
+#   target-cache - Shared build artifacts (speeds up incremental builds)
+#
+# USAGE:
+#   docker-compose run --rm gik-dev bash        # Development shell
+#   docker-compose run --rm gik-dev cargo test  # Run tests
+#   docker-compose run --rm gik-dev cargo build # Dev build
+#   docker-compose build gik-dev                # Rebuild dev image
+#
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Development Environment
+  # ---------------------------------------------------------------------------
+  # Full development environment with all tools for building, testing, and
+  # debugging. Uses volume mounts for:
+  # - Source code (live editing)
+  # - Cargo registry (shared cache)
+  # - Target directory (incremental builds)
+  gik-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      # Mount source code for live editing
+      - .:/workspace
+      # Persistent cargo registry cache
+      - cargo-cache:/usr/local/cargo/registry
+      # Persistent target cache for incremental builds
+      - target-cache:/workspace/target
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    environment:
+      # Enable backtraces for debugging
+      - RUST_BACKTRACE=1
+      # Colored output
+      - CARGO_TERM_COLOR=always
+      # Faster incremental builds
+      - CARGO_INCREMENTAL=1
+
+  # ---------------------------------------------------------------------------
+  # Build Service
+  # ---------------------------------------------------------------------------
+  # Standalone build service for release compilation.
+  # Uses the production Dockerfile for consistent builds.
+  gik-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+
+# =============================================================================
+# Shared Volumes
+# =============================================================================
+# These volumes persist across container restarts, significantly speeding up
+# subsequent builds by caching:
+# - Downloaded crates from crates.io
+# - Compiled dependencies
+volumes:
+  # Cargo registry cache (~2GB for full dependencies)
+  cargo-cache:
+    name: gik-cargo-cache
+  
+  # Build target cache (~5GB for full debug + release builds)
+  target-cache:
+    name: gik-target-cache

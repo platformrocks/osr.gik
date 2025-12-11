@@ -1,0 +1,61 @@
+[package]
+name = "gik-db"
+description = "GIK infrastructure layer - vector storage and KG persistence"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "gik_db"
+path = "src/lib.rs"
+
+[features]
+default = ["lancedb"]
+
+# LanceDB backend - production vector store with ANN search
+lancedb = [
+    "dep:lancedb",
+    "dep:arrow",
+    "dep:arrow-array",
+    "dep:arrow-buffer",
+    "dep:arrow-schema",
+    "dep:tokio",
+    "dep:futures",
+    "dep:lance-arrow",
+]
+
+# Simple file-based vector backend - for testing/small indexes
+simple = []
+
+[dependencies]
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Time
+chrono.workspace = true
+
+# Logging
+tracing.workspace = true
+
+# LanceDB backend (feature-gated)
+lancedb = { workspace = true, optional = true }
+arrow = { workspace = true, optional = true }
+arrow-array = { workspace = true, optional = true }
+arrow-buffer = { workspace = true, optional = true }
+arrow-schema = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+lance-arrow = { version = "0.39", optional = true }
+
+# File paths
+dirs = "6"
+
+[dev-dependencies]
+tempfile = "3"

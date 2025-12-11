@@ -1,0 +1,53 @@
+# =============================================================================
+# GIK CLI - macOS Cross-Compilation Dockerfile (Experimental)
+# =============================================================================
+#
+# This attempts to cross-compile for macOS x86_64 from Linux.
+# Note: This is experimental and may not work for all dependencies.
+#
+# Build: docker build -f Dockerfile.macos -t gik-macos .
+#
+# =============================================================================
+
+FROM rust:slim-bookworm AS builder
+
+# Install cross-compilation tools
+RUN apt-get update && apt-get install -y \
+    clang \
+    cmake \
+    protobuf-compiler \
+    libprotobuf-dev \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install osxcross for macOS cross-compilation
+WORKDIR /opt
+RUN git clone https://github.com/tpoechtrager/osxcross.git
+WORKDIR /opt/osxcross
+
+# Download macOS SDK (you need to provide this separately)
+# See: https://github.com/tpoechtrager/osxcross#packaging-the-sdk
+# RUN curl -L -o tarballs/MacOSX11.3.sdk.tar.xz <URL_TO_SDK>
+
+# Build osxcross
+# RUN UNATTENDED=1 ./build.sh
+
+# Add Rust target
+RUN rustup target add x86_64-apple-darwin
+
+WORKDIR /build
+COPY . .
+
+# Set environment for cross-compilation
+# ENV PATH="/opt/osxcross/target/bin:$PATH"
+# ENV CC=x86_64-apple-darwin20.4-clang
+# ENV CXX=x86_64-apple-darwin20.4-clang++
+
+# Build
+# RUN cargo build --release --target x86_64-apple-darwin -p gik-cli
+
+# Note: This is a template. You'll need to:
+# 1. Obtain a legal macOS SDK
+# 2. Complete the osxcross setup
+# 3. Configure the build environment properly
