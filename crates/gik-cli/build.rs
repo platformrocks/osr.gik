@@ -23,24 +23,32 @@ fn main() {
     println!("cargo:rerun-if-changed=.git/refs/heads/");
 
     // Windows resource file for executable metadata
-    #[cfg(target_os = "windows")]
-    {
-        let target = env::var("TARGET").unwrap();
-        if target.contains("windows") {
-            let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-            let resource_file = PathBuf::from(&manifest_dir)
-                .join("resources")
-                .join("windows")
-                .join("gik.rc");
+    // Compile for any Windows target (native or cross-compiled)
+    let target = env::var("TARGET").unwrap();
+    if target.contains("windows") {
+        let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+        let resource_file = PathBuf::from(&manifest_dir)
+            .join("resources")
+            .join("windows")
+            .join("gik.rc");
 
-            if resource_file.exists() {
-                // Tell cargo to compile and link the resource file
-                println!("cargo:rerun-if-changed={}", resource_file.display());
-                
-                // Use embed_resource crate to handle .rc compilation
-                // This works with both MSVC and MinGW toolchains
-                embed_resource::compile(&resource_file, embed_resource::NONE);
+        if resource_file.exists() {
+            // Tell cargo to compile and link the resource file
+            println!("cargo:rerun-if-changed={}", resource_file.display());
+            
+            // For MinGW cross-compilation, ensure windres is configured
+            if target.contains("gnu") {
+                // Check if WINDRES is set, if not set it to the MinGW windres
+                if env::var("WINDRES").is_err() {
+                    let windres = format!("x86_64-w64-mingw32-windres");
+                    env::set_var("WINDRES", &windres);
+                    println!("cargo:warning=Setting WINDRES to {}", windres);
+                }
             }
+            
+            // Use embed_resource crate to handle .rc compilation
+            // This works with both MSVC and MinGW toolchains
+            embed_resource::compile(&resource_file, embed_resource::NONE);
         }
     }
 }
