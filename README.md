@@ -28,12 +28,6 @@ GIK provides:
 
 ## Quick Install
 
-**Homebrew (macOS/Linux):**
-```bash
-brew tap platformrocks/gik
-brew install gik
-```
-
 **Linux / macOS (curl):**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/platformrocks/osr.gik/main/scripts/install.sh | bash
